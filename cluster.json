@@ -4,7 +4,7 @@
   "imageLocation":"https://cloud-images.ubuntu.com/releases/focal/release-20210315",
   "md5sum":"https://cloud-images.ubuntu.com/releases/focal/release-20210315/MD5SUMS",
   "imageName":"ubuntu-20.04-server-cloudimg-amd64.img",
-  "pubKey":"~/.ssh/id_rsa.pub",
+  "pubKey":"/root/.ssh/id_rsa.pub",
   "libvirtImageLocation":"/var/lib/libvirt/images",
   "disk":"50g",
   "cpu":"4",

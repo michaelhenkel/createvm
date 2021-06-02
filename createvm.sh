@@ -11,9 +11,9 @@ function mask2cdr(){
 }
 
 function createNetwork(){
-  virsh net-info ${clusterName}_${networkName}
+  virsh net-info ${clusterName}_${networkName} > /dev/null 2>&1
   if [[ $? -eq 1 ]]; then
-    netXML=$(mktemp)
+    netXML=${out}/net.xml
     prefix=$(echo ${subnet}|awk -F"/" '{print $1}')
     prefixLength=$(echo ${subnet}|awk -F"/" '{print $2}')
     mask=$(mask2cdr ${prefixLength})
@@ -29,7 +29,6 @@ function createNetwork(){
   </ip>
 </network>
 EOF
-    cat ${netXML}
     virsh net-define ${netXML}
     virsh net-start ${clusterName}_${networkName}
     virsh net-autostart ${clusterName}_${networkName}
@@ -38,8 +37,8 @@ EOF
 
 function create(){
   createNetwork
-  curl -OL ${md5sum}
-  imageMD5=$(grep ${imageName} $(basename ${md5sum}) |awk '{print $1}')
+  curl -sL ${md5sum} -o ${out}/$(basename ${md5sum})
+  imageMD5=$(grep ${imageName} ${out}/$(basename ${md5sum}) |awk '{print $1}')
   if [[ -f ${libvirtImageLocation}/${imageName} ]]; then
     md5=$(md5sum ${libvirtImageLocation}/${imageName} |awk '{print $1}')
     if [[ ${md5} != ${imageMD5} ]]; then
@@ -52,10 +51,10 @@ function create(){
   for k in $(jq '.instances | keys | .[]' ${file}); do
     hostname=$(jq -r ".instances[$k].name" ${file});
     ip=$(jq -r ".instances[$k].ip" ${file});
-    qemu-img create -b ${imageName} -f qcow2 -F qcow2 ${libvirtImageLocation}/${imageName}-${clusterName}-${hostname}.qcow2 ${disk}
-    cat << EOF > cloud_init-${clusterName}-${hostname}.cfg
+    qemu-img create -b ${imageName} -f qcow2 -F qcow2 ${libvirtImageLocation}/${imageName}-${clusterName}-${hostname}.qcow2 ${disk} > /dev/null 2>&1
+    cat << EOF > ${out}/cloud_init-${clusterName}-${hostname}.cfg
 #cloud-config
-hostname: ${hostname}.${clusterName}.${suffic}
+hostname: ${hostname}.${clusterName}.${suffix}
 manage_etc_hosts: true
 users:
   - name: ubuntu
@@ -89,7 +88,7 @@ runcmd:
 final_message: "The system is finally up, after $UPTIME seconds"
 EOF
 
-    cat << EOF > network_config_static-${clusterName}-${hostname}.cfg
+    cat << EOF > ${out}/network_config_static-${clusterName}-${hostname}.cfg
 version: 2
 ethernets:
   enp1s0:
@@ -97,7 +96,7 @@ ethernets:
      addresses: [ ${ip}/24 ]
      gateway4: ${gateway}
 EOF
-      cloud-localds -v --network-config=network_config_static-${clusterName}-${hostname}.cfg ${libvirtImageLocation}/${clusterName}-${hostname}-seed.img cloud_init-${clusterName}-${hostname}.cfg
+      cloud-localds -v --network-config=${out}/network_config_static-${clusterName}-${hostname}.cfg ${libvirtImageLocation}/${clusterName}-${hostname}-seed.img ${out}/cloud_init-${clusterName}-${hostname}.cfg > /dev/null 2>&1
       virt-install --name ${clusterName}-${hostname} \
         --virt-type kvm --memory ${memory} --vcpus ${cpu} \
         --boot hd,menu=on \
@@ -109,6 +108,7 @@ EOF
         --noautoconsole \
         --console pty,target_type=serial
   done
+  rm -rf ${out}
 }
 
 function snapshot(){
@@ -168,25 +168,7 @@ function setVars(){
   gateway=$(jq -r ".network.gateway" ${file});
   dnsserver=$(jq -r ".network.dnsserver" ${file});
   networkType=$(jq -r ".network.type" ${file});
-  echo clusterName: ${clusterName}
-  echo suffix: ${suffix}
-  echo imageLocation: ${imageLocation}
-  echo md5sum: ${md5sum}
-  echo imageName: ${imageName}
-  echo pubKey: ${pubKey}
-  echo libvirtImageLocation: ${libvirtImageLocation}
-  echo disk: ${disk}
-  echo memory: ${memory}
-  echo networkName: ${networkName}
-  echo subnet: ${subnet}
-  echo gateway: ${gateway}
-  echo dnsserver: ${dnsserver}
-  echo networkType: ${networkType}
-  for k in $(jq '.instances | keys | .[]' ${file}); do
-    hostname=$(jq -r ".instances[$k].name" ${file});
-    ip=$(jq -r ".instances[$k].ip" ${file});
-    echo ${name} ${ip}
-  done
+  out=$(mktemp -d)
 }
 
 case $1 in

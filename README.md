@@ -5,7 +5,8 @@
 - virsh
 - qemu-img
 - cloud-localds    
-Must run as root for now    
+
+*Must run as root for now*
 ## Usage
 ### Create
 1. edit cluster.json

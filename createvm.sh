@@ -48,6 +48,7 @@ function create(){
   else
     curl -L ${imageLocation}/${imageName} -o ${libvirtImageLocation}/${imageName}
   fi
+  pubKey=$(cat ${pubKey})
   for k in $(jq '.instances | keys | .[]' ${file}); do
     hostname=$(jq -r ".instances[$k].name" ${file});
     ip=$(jq -r ".instances[$k].ip" ${file});
@@ -146,9 +147,9 @@ function kill(){
     hostname=$(jq -r ".instances[$k].name" ${file});
     virsh destroy ${clusterName}-${hostname}
     virsh undefine ${clusterName}-${hostname}
-    virsh net-undefine ${clusterName}_${networkName}
-    virsh net-destroy ${clusterName}_${networkName}
   done
+  virsh net-undefine ${clusterName}_${networkName}
+  virsh net-destroy ${clusterName}_${networkName}
 }
 
 function setVars(){

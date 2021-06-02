@@ -1,0 +1,35 @@
+{
+  "name": "cluster1",
+  "suffix": "local",
+  "imageLocation":"https://cloud-images.ubuntu.com/releases/focal/release-20210315",
+  "md5sum":"https://cloud-images.ubuntu.com/releases/focal/release-20210315/MD5SUMS",
+  "imageName":"ubuntu-20.04-server-cloudimg-amd64.img",
+  "pubKey":"~/.ssh/id_rsa.pub",
+  "libvirtImageLocation":"/var/lib/libvirt/images",
+  "disk":"50g",
+  "cpu":"4",
+  "memory":"20000",
+    "network": {
+      "name": "network1",
+      "subnet":"192.168.200.0/24",
+      "gateway":"192.168.200.1",
+      "dnsserver":"192.168.200.1",
+      "type":"bridge"
+    },
+    "instances": [{
+      "name": "ubuntu1",
+      "ip":"192.168.200.11"
+    },{
+      "name": "ubuntu2",
+      "ip":"192.168.200.12"
+    },{
+      "name": "ubuntu3",
+      "ip":"192.168.200.13"
+    },{
+      "name": "ubuntu4",
+      "ip":"192.168.200.14"
+    },{
+      "name": "ubuntu5",
+      "ip":"192.168.200.15"
+    }]
+}

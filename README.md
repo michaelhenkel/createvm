@@ -4,7 +4,7 @@
 - qemu
 - virsh
 - qemu-img
-- cloud-localds
+- cloud-localds    
 Must run as root for now    
 ## Usage
 ### Create

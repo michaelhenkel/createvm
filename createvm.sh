@@ -138,18 +138,40 @@ function start(){
 function shutdown(){
   for k in $(jq '.instances | keys | .[]' ${file}); do
     hostname=$(jq -r ".instances[$k].name" ${file});
-    virsh shutdown ${clusterName}-${hostname}
+    virsh shutdown ${clusterName}-${hostname} > /dev/null 2>&1
   done
 }
 
 function kill(){
   for k in $(jq '.instances | keys | .[]' ${file}); do
     hostname=$(jq -r ".instances[$k].name" ${file});
-    virsh destroy ${clusterName}-${hostname}
-    virsh undefine ${clusterName}-${hostname}
+    instanceSnapshot=$(virsh snapshot-list ${clusterName}-${hostname} --name)
+    if [[ ${instanceSnapshot} != "" ]]; then
+      virsh snapshot-delete ${clusterName}-${hostname} ${instanceSnapshot}
+    fi
+    for instance in $(virsh list --name --state-running); do
+      if [[ ${instance} == ${clusterName}-${hostname} ]]; then
+        virsh destroy ${clusterName}-${hostname}
+	break
+      fi
+    done
+    for instance in $(virsh list --name --state-shutoff); do
+      if [[ ${instance} == ${clusterName}-${hostname} ]]; then
+        virsh undefine ${clusterName}-${hostname}
+	break
+      fi
+    done
   done
-  virsh net-undefine ${clusterName}_${networkName}
-  virsh net-destroy ${clusterName}_${networkName}
+  for virshnet in $(virsh net-list --all --name); do
+    if [[ ${virshnet} == ${clusterName}_${networkName} ]]; then
+      virsh net-destroy ${clusterName}_${networkName}
+    fi
+  done
+  for virshnet in $(virsh net-list --all --name --inactive); do
+    if [[ ${virshnet} == ${clusterName}_${networkName} ]]; then
+      virsh net-undefine ${clusterName}_${networkName}
+    fi
+  done
 }
 
 function setVars(){

@@ -181,7 +181,7 @@ do
   case "${flag}" in
     c) create;;
     s) start;;
-    p) poweroff;;
+    p) shutdown;;
     b) snapshot;;
     k) kill;;
     r) revert;;
